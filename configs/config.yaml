@@ -1,0 +1,14 @@
+server:
+  logger:
+    level: debug # debug info warn error dpanic panic fatal
+    encoding: console # console, json
+    path: # stdout, stderr or file path
+      - "stdout"
+    error_path: # stdout, stderr or file path
+      - "stderr"
+    initial_fields: # initial fields
+      app: scep
+      env: dev
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 6s
