@@ -32,5 +32,17 @@ message Data {
     string driver = 1;
     string source = 2;
   }
+  message Filedepot {
+    string capath = 1;
+    string addlcapath = 2;
+  }
+  message RSASigerConfig {
+    string capass = 1;
+    int32 allowRenewal = 2;
+    int32 validityDay = 3;
+  }
   Database database = 1;
+  string depot_type = 2;
+  Filedepot filedepot = 3;
+  RSASigerConfig RSAsigerconfig = 4;
 }

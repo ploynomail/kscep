@@ -1,20 +1,20 @@
 package utils
 
 const (
-	certChainHeader = "application/x-x509-ca-ra-cert"
-	leafHeader      = "application/x-x509-ca-cert"
-	pkiOpHeader     = "application/x-pki-message"
+	CertChainHeader = "application/x-x509-ca-ra-cert"
+	LeafHeader      = "application/x-x509-ca-cert"
+	PkiOpHeader     = "application/x-pki-message"
 )
 
 func ContentHeader(op string, certNum int) string {
 	switch op {
 	case "GetCACert":
 		if certNum > 1 {
-			return certChainHeader
+			return CertChainHeader
 		}
-		return leafHeader
+		return LeafHeader
 	case "PKIOperation":
-		return pkiOpHeader
+		return PkiOpHeader
 	default:
 		return "text/plain"
 	}

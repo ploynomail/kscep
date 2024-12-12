@@ -11,6 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"kscep/internal/biz"
 	"kscep/internal/conf"
+	"kscep/internal/data"
 	"kscep/internal/server"
 	"kscep/internal/service"
 )
@@ -22,11 +23,21 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, data *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
 	helloWorldUsecase := biz.NewHelloWorldUsecase(logger)
 	helloWorldService := service.NewHelloWorldService(helloWorldUsecase, logger)
-	httpServer := server.NewGinhttpServer(confServer, logger, helloWorldService)
+	dataData, cleanup, err := data.NewData(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	scepcaRepo := data.NewSCEPCARepo(confData, dataData, logger)
+	scepcaUsecase := biz.NewSCEPCAUsecase(scepcaRepo, logger)
+	csrSignerUsecase := biz.NewCSRSignerUsecase(confData, logger)
+	scepUsecase := biz.NewSCEPUsecase(scepcaUsecase, csrSignerUsecase, logger)
+	scepService := service.NewSCEPService(scepUsecase, logger)
+	httpServer := server.NewGinhttpServer(confServer, logger, helloWorldService, scepService)
 	app := newApp(logger, httpServer)
 	return app, func() {
+		cleanup()
 	}, nil
 }

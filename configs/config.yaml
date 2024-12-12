@@ -12,3 +12,12 @@ server:
   http:
     addr: 0.0.0.0:8000
     timeout: 6s
+data:
+  depot_type: "file"
+  filedepot:
+   capath: "./bin/certs"
+   addlcapath: "./bin/certs"
+  RSAsigerconfig:
+   capass: ""
+   allowRenewal: 30
+   validityDay: 365
