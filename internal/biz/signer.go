@@ -35,9 +35,10 @@ type CSRSignerUsecase struct {
 	log  *log.Helper
 }
 
-func NewCSRSignerUsecase(conf *conf.Data, logger log.Logger) *CSRSignerUsecase {
+func NewCSRSignerUsecase(conf *conf.Data, logger log.Logger, repo CSRSignerRepo) *CSRSignerUsecase {
 	return &CSRSignerUsecase{
 		conf: conf,
+		repo: repo,
 		log:  log.NewHelper(log.With(logger, "module", "usecase/scep/signer")),
 	}
 }

@@ -64,23 +64,27 @@ func (svc *SCEPUsecase) GetCACert(ctx context.Context, msg string) ([]byte, int,
 func (svc *SCEPUsecase) PKIOperation(ctx context.Context, data []byte) ([]byte, error) {
 	caCrt, err := svc.caUsecase.GetCACert("RSA")
 	if err != nil {
+		svc.log.Errorf("failed to get CA cert: %v", err)
 		return nil, err
 	}
 	caKey, err := svc.caUsecase.GetCAKey("RSA")
 	if err != nil {
+		svc.log.Errorf("failed to get CA key: %v", err)
 		return nil, err
 	}
-
 	msg, err := scep.ParsePKIMessage(data, scep.WithLogger(utils.LoggerWapper(svc.log)))
 	if err != nil {
+		svc.log.Errorf("failed to parse PKI message: %v", err)
 		return nil, err
 	}
 	if err := msg.DecryptPKIEnvelope(caCrt, caKey); err != nil {
+		svc.log.Errorf("failed to decrypt PKI envelope: %v", err)
 		return nil, err
 	}
 
 	crt, err := svc.signer.SignCSR(ctx, msg.CSRReqMessage)
 	if err == nil && crt == nil {
+		svc.log.Errorf("failed to sign CSR: no signed certificate")
 		err = errors.New("no signed certificate")
 	}
 	if err != nil {

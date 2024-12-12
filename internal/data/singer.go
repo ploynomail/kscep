@@ -75,7 +75,7 @@ func (s *SignerRepo) SignCSRContext(ctx context.Context, m *scep.CSRReqMessage) 
 		SerialNumber: serial,
 		Subject:      m.CSR.Subject,
 		NotBefore:    time.Now().Add(time.Second * -600).UTC(),
-		NotAfter:     time.Now().AddDate(0, 0, s.validityDays).UTC(),
+		NotAfter:     time.Now().AddDate(10, 0, s.validityDays).UTC(),
 		SubjectKeyId: id,
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{

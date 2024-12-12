@@ -2,7 +2,7 @@ package biz
 
 import "errors"
 
-const MaxPayloadSize = 2 << 20
+const MaxPayloadSize = 2 << 20 // 2MB
 
 var DefaultCaps = []byte("Renewal\nSHA-1\nSHA-256\nAES\nDES3\nSCEPStandard\nPOSTPKIOperation")
 var GBT0089Caps = []byte("Renewal\nGetNextCACert\nPOSTPKIOperation\nSM3\nSM4")

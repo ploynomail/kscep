@@ -11,7 +11,6 @@ func Result(statusCode int, resp biz.SCEPResponse, c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", utils.ContentHeader(resp.Operation, resp.CACertNum))
 	c.Writer.WriteHeader(statusCode)
 	c.Writer.Write(resp.Data)
-	return
 }
 
 func ResultErr(statusCode int, resp biz.SCEPResponse, c *gin.Context) {
@@ -19,7 +18,6 @@ func ResultErr(statusCode int, resp biz.SCEPResponse, c *gin.Context) {
 	c.Writer.WriteHeader(statusCode)
 	c.Writer.Write([]byte(resp.Err.Error()))
 	c.Abort()
-	return
 }
 
 func ServerInternalError(err error, c *gin.Context) {

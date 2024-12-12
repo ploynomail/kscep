@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"kscep/internal/biz"
 	"kscep/internal/utils"
 	"net/http"
@@ -53,13 +52,13 @@ func EncodeSCEPRequest(ctx context.Context, r *http.Request, request interface{}
 // DecodeSCEPResponse decodes a SCEP response
 func DecodeSCEPResponse(ctx context.Context, r *http.Response) (interface{}, error) {
 	if r.StatusCode != http.StatusOK && r.StatusCode >= 400 {
-		body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 4096))
+		body, _ := io.ReadAll(io.LimitReader(r.Body, 4096))
 		return nil, fmt.Errorf("http request failed with status %s, msg: %s",
 			r.Status,
 			string(body),
 		)
 	}
-	data, err := ioutil.ReadAll(io.LimitReader(r.Body, biz.MaxPayloadSize))
+	data, err := io.ReadAll(io.LimitReader(r.Body, biz.MaxPayloadSize))
 	if err != nil {
 		return nil, err
 	}

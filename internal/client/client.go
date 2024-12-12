@@ -59,7 +59,7 @@ func (e *Endpoints) Supports(cap string) bool {
 }
 
 func (e *Endpoints) GetCACert(ctx context.Context, message string) ([]byte, int, error) {
-	request := biz.SCEPRequest{Operation: biz.GetCACaps, Message: []byte(message)}
+	request := biz.SCEPRequest{Operation: biz.GetCACert, Message: []byte(message)}
 	response, err := e.GetEndpoint(ctx, request)
 	if err != nil {
 		return nil, 0, err
@@ -70,6 +70,7 @@ func (e *Endpoints) GetCACert(ctx context.Context, message string) ([]byte, int,
 
 func (e *Endpoints) PKIOperation(ctx context.Context, msg []byte) ([]byte, error) {
 	var ee endpoint.Endpoint
+	// TODO: This is a bit of a hack. We should have a better way to determine
 	if e.Supports(biz.POSTPKIOperation) || e.Supports(biz.SCEPStandard) {
 		ee = e.PostEndpoint
 	} else {

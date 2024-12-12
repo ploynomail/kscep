@@ -18,6 +18,7 @@ var (
 	KeyEnciphermentSelector bool   //按密钥加密用途过滤 CA 证书
 	DebugLogging            bool   //启用调试日志
 	logFmt                  string //使用 JSON 输出日志
+	errTrace                bool   //打印错误堆栈
 )
 
 func init() {
@@ -38,4 +39,5 @@ func init() {
 	clientCmd.Flags().BoolVarP(&KeyEnciphermentSelector, "key-encipherment-selector", "e", false, "Filter CA certificates by key encipherment purpose")
 	clientCmd.Flags().BoolVarP(&DebugLogging, "debug-logging", "g", false, "Enable debug logging")
 	clientCmd.Flags().StringVarP(&logFmt, "log-json", "j", "console", "Use JSON output for logs")
+	clientCmd.Flags().BoolVarP(&errTrace, "error-trace", "r", false, "Print error stack traces")
 }

@@ -39,3 +39,5 @@ bin/
 
 ./bin/*
 .CodeCounter/*
+
+**/testdata/**

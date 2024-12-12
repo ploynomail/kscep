@@ -32,7 +32,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	}
 	scepcaRepo := data.NewSCEPCARepo(confData, dataData, logger)
 	scepcaUsecase := biz.NewSCEPCAUsecase(scepcaRepo, logger)
-	csrSignerUsecase := biz.NewCSRSignerUsecase(confData, logger)
+	csrSignerRepo := data.NewSigner(dataData, logger)
+	csrSignerUsecase := biz.NewCSRSignerUsecase(confData, logger, csrSignerRepo)
 	scepUsecase := biz.NewSCEPUsecase(scepcaUsecase, csrSignerUsecase, logger)
 	scepService := service.NewSCEPService(scepUsecase, logger)
 	httpServer := server.NewGinhttpServer(confServer, logger, helloWorldService, scepService)

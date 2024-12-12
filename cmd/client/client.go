@@ -43,10 +43,12 @@ func run(cfg runCfg) error {
 	ctx := context.Background()
 	client, err := client.NewClient(cfg.serverURL, logger)
 	if err != nil {
+		logger.Error("creating client", zap.Error(err))
 		return err
 	}
 	key, err := utils.LoadOrMakeKey(cfg.keyPath, cfg.keyBits)
 	if err != nil {
+		logger.Error("loading or making key", zap.Error(err))
 		return err
 	}
 
@@ -64,6 +66,7 @@ func run(cfg runCfg) error {
 
 	csr, err := utils.LoadOrMakeCSR(cfg.csrPath, opts)
 	if err != nil {
+		logger.Error("loading or making csr", zap.Error(err))
 		return err
 	}
 
@@ -71,10 +74,12 @@ func run(cfg runCfg) error {
 	cert, err := utils.LoadPEMCertFromFile(cfg.certPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
+			logger.Error("loading cert", zap.Error(err))
 			return err
 		}
 		s, err := utils.LoadOrSign(cfg.selfSignPath, key, csr)
 		if err != nil {
+			logger.Error("loading or signing self signed cert", zap.Error(err))
 			return err
 		}
 		self = s
@@ -82,6 +87,7 @@ func run(cfg runCfg) error {
 
 	resp, certNum, err := client.GetCACert(ctx, cfg.caCertMsg)
 	if err != nil {
+		logger.Error("getting ca cert", zap.Error(err))
 		return err
 	}
 	var caCerts []*x509.Certificate
@@ -89,11 +95,13 @@ func run(cfg runCfg) error {
 		if certNum > 1 {
 			caCerts, err = scep.CACerts(resp)
 			if err != nil {
+				logger.Error("parsing ca certs", zap.Error(err))
 				return err
 			}
 		} else {
 			caCerts, err = x509.ParseCertificates(resp)
 			if err != nil {
+				logger.Error("parsing ca cert", zap.Error(err))
 				return err
 			}
 		}
@@ -129,12 +137,11 @@ func run(cfg runCfg) error {
 			ChallengePassword: cfg.challenge,
 		}
 	}
-
 	msg, err := scep.NewCSRRequest(csr, tmpl, scep.WithCertsSelector(cfg.caCertsSelector))
 	if err != nil {
+		logger.Error("creating csr pkiMessage", zap.Error(err))
 		return errors.Wrap(err, "creating csr pkiMessage")
 	}
-
 	var respMsg *scep.PKIMessage
 
 	for {
@@ -143,11 +150,13 @@ func run(cfg runCfg) error {
 
 		respBytes, err := client.PKIOperation(ctx, msg.Raw)
 		if err != nil {
+			logger.Error("PKIOperation", zap.Error(err))
 			return errors.Wrapf(err, "PKIOperation for %s", msgType)
 		}
 
 		respMsg, err = scep.ParsePKIMessage(respBytes, scep.WithCACerts(caCerts))
 		if err != nil {
+			logger.Error("parsing pkiMessage response", zap.Error(err))
 			return errors.Wrapf(err, "parsing pkiMessage response %s", msgType)
 		}
 
@@ -162,7 +171,6 @@ func run(cfg runCfg) error {
 		logger.Info("pkiStatus", zap.String("status", "SUCCESS"), zap.String("msg", "server returned a certificate."))
 		break // on scep.SUCCESS
 	}
-
 	if err := respMsg.DecryptPKIEnvelope(signerCert, key); err != nil {
 		return errors.Wrapf(err, "decrypt pkiEnvelope, msgType: %s, status %s", msgType, respMsg.PKIStatus)
 	}

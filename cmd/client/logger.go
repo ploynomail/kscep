@@ -9,18 +9,21 @@ var logger *zap.Logger
 
 func InitializeLogger(fmt string) {
 	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:       "time",
-		LevelKey:      "level",
-		NameKey:       "logger",
-		CallerKey:     "caller",
-		MessageKey:    "msg",
-		StacktraceKey: "stacktrace",
-		LineEnding:    zapcore.DefaultLineEnding,
+		TimeKey:    "time",
+		LevelKey:   "level",
+		NameKey:    "logger",
+		CallerKey:  "caller",
+		MessageKey: "msg",
+		// StacktraceKey: "stacktrace",
+		LineEnding: zapcore.DefaultLineEnding,
 		//EncodeLevel:    zapcore.LowercaseLevelEncoder,  // 小写编码器
 		EncodeLevel:    zapcore.CapitalColorLevelEncoder, //这里可以指定颜色
 		EncodeTime:     zapcore.ISO8601TimeEncoder,       // ISO8601 UTC 时间格式
 		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.FullCallerEncoder, // 全路径编码器
+		EncodeCaller:   zapcore.FullCallerEncoder, // error code location
+	}
+	if errTrace {
+		encoderConfig.StacktraceKey = "stacktrace"
 	}
 	var encoder = "console"
 	if fmt == "json" {

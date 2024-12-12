@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/base64"
+	"fmt"
 	"kscep/internal/biz"
 	"net/url"
 
@@ -85,16 +86,38 @@ func (s *SCEPService) scep(c *gin.Context) {
 func (s *SCEPService) sceppost(c *gin.Context) {
 	var req biz.SCEPRequest
 	var resp biz.SCEPResponse = biz.SCEPResponse{Operation: req.Operation}
-	if err := c.ShouldBindQuery(&req); err != nil {
-		resp.Err = err
+	req.Operation = c.Query("operation")
+	if req.Operation == "" {
+		resp.Err = biz.MissingOperationErr
 		ClientError(resp.Err, c)
+		s.log.Error("MissingOperationErr")
+		return
 	}
+
+	if req.Operation == "PKIOperation" {
+		req.Message = make([]byte, c.Request.ContentLength)
+		_, err := c.Request.Body.Read(req.Message)
+		if err != nil && err.Error() != "EOF" {
+			resp.Err = err
+			s.log.Error("Read request body error", err)
+			ClientError(resp.Err, c)
+			return
+		}
+	} else {
+		s.log.Error("UnsupportedOperationErr")
+		ClientError(biz.UnsupportedOperationErr, c)
+		return
+	}
+
 	switch req.Operation {
 	case "PKIOperation":
 		resp.Data, resp.Err = s.uc.PKIOperation(c, req.Message)
 	default:
 		resp.Err = biz.UnsupportedOperationErr
+		s.log.Error("UnsupportedOperationErr")
 		ClientError(resp.Err, c)
+		return
 	}
+	fmt.Println("resp:", len(resp.Data))
 	Ok(resp, c)
 }
