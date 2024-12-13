@@ -28,7 +28,7 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	switch c.DepotType {
 	case "file":
 		if c.Filedepot.Capath == "" || c.Filedepot.Addlcapath == "" {
-			return nil, nil, biz.DepotConfigErr
+			return nil, nil, biz.ErrDepotConfig
 		}
 		depot, err = filedepot.NewFileDepot(c.Filedepot.Capath)
 		if err != nil {

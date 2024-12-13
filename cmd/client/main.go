@@ -14,7 +14,7 @@ var version = "0.0.1"
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(clientCmd)
+	rootCmd.AddCommand(ReqCmd)
 }
 
 // versionCmd represents the version command
@@ -28,10 +28,10 @@ var versionCmd = &cobra.Command{
 }
 
 // client command
-var clientCmd = &cobra.Command{
-	Use:   "client",
-	Short: "client subcommand is a client for SCEP protocol",
-	Long:  "client subcommand is a client for SCEP protocol",
+var ReqCmd = &cobra.Command{
+	Use:   "signer",
+	Short: "signer subcommand is a client for SCEP protocol",
+	Long:  "signer subcommand is a client for SCEP protocol",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		InitializeLogger(logFmt)
 	},
@@ -105,7 +105,6 @@ var clientCmd = &cobra.Command{
 
 			caCertMsg:       CACertMessage,
 			caCertsSelector: caCertsSelector,
-			challenge:       ChallengePassword,
 
 			logfmt: logFmt,
 			debug:  DebugLogging,

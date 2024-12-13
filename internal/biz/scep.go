@@ -40,12 +40,12 @@ func (svc *SCEPUsecase) GetCACaps(ctx context.Context) ([]byte, error) {
 func (svc *SCEPUsecase) GetCACert(ctx context.Context, msg string) ([]byte, int, error) {
 	caType := strings.ToUpper(strings.Trim(msg, "\n"))
 	if !utils.IsInArray(SupportedCaTypes, caType) {
-		return nil, 0, UnsupportedCaTypeErr
+		return nil, 0, ErrUnsupportedCaType
 	}
 	cer, err := svc.caUsecase.GetCACert(caType)
 	if err != nil || cer == nil {
 		svc.log.Errorf("failed to get CA cert: %v", err)
-		return nil, 0, MissingCaCertErr
+		return nil, 0, ErrMissingCaCert
 	}
 	addlCA, err := svc.caUsecase.GetAddlCA()
 	if err != nil {
@@ -60,7 +60,6 @@ func (svc *SCEPUsecase) GetCACert(ctx context.Context, msg string) ([]byte, int,
 	return data, len(addlCA) + 1, err
 }
 
-// TODO
 func (svc *SCEPUsecase) PKIOperation(ctx context.Context, data []byte) ([]byte, error) {
 	caCrt, err := svc.caUsecase.GetCACert("RSA")
 	if err != nil {
@@ -72,7 +71,7 @@ func (svc *SCEPUsecase) PKIOperation(ctx context.Context, data []byte) ([]byte, 
 		svc.log.Errorf("failed to get CA key: %v", err)
 		return nil, err
 	}
-	msg, err := scep.ParsePKIMessage(data, scep.WithLogger(utils.LoggerWapper(svc.log)))
+	msg, err := scep.ParsePKIMessage(data, scep.WithLogger(utils.LoggerSCEPWPapper(svc.log)))
 	if err != nil {
 		svc.log.Errorf("failed to parse PKI message: %v", err)
 		return nil, err
@@ -92,7 +91,6 @@ func (svc *SCEPUsecase) PKIOperation(ctx context.Context, data []byte) ([]byte, 
 		certRep, err := msg.Fail(caCrt, caKey, scep.BadRequest)
 		return certRep.Raw, err
 	}
-
 	certRep, err := msg.Success(caCrt, caKey, crt)
 	return certRep.Raw, err
 }

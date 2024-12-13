@@ -33,7 +33,10 @@ func NewClient(serverURL string, logger *zap.Logger) (*Endpoints, error) {
 }
 
 func (e *Endpoints) GetCACaps(ctx context.Context) ([]byte, error) {
-	request := biz.SCEPRequest{Operation: biz.GetCACaps}
+	request := biz.SCEPRequest{
+		Operation: biz.GetCACaps,
+		Message:   []byte(biz.CAIDENTIFIER),
+	}
 	response, err := e.GetEndpoint(ctx, request)
 	if err != nil {
 		return nil, err

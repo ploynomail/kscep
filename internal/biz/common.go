@@ -8,13 +8,15 @@ var DefaultCaps = []byte("Renewal\nSHA-1\nSHA-256\nAES\nDES3\nSCEPStandard\nPOST
 var GBT0089Caps = []byte("Renewal\nGetNextCACert\nPOSTPKIOperation\nSM3\nSM4")
 
 var (
-	UnsupportedCaTypeErr    = errors.New("unsupported CA type")
-	SupportedCaTypes        = []string{"RSA", "ECC", "SM2", ""}
-	MissingCaCertErr        = errors.New("missing CA certificate")
-	UnsupportedOperationErr = errors.New("unsupported operation")
-	MissingOperationErr     = errors.New("missing operation")
-	MissingMessageErr       = errors.New("missing message")
-	DepotConfigErr          = errors.New("depot config error")
+	SupportedCaTypes = []string{"RSA", "ECC", "SM2", ""}
+
+	ErrUnsupportedCaType      = errors.New("unsupported CA type")
+	ErrMissingCaCert          = errors.New("missing CA certificate")
+	ErrUnsupportedOperation   = errors.New("unsupported operation")
+	ErrMissingOperation       = errors.New("missing operation")
+	ErrMissingMessage         = errors.New("missing message")
+	ErrDepotConfig            = errors.New("depot config error")
+	ErrUnsupportedMessageType = errors.New("unsupported message type")
 )
 
 type CaType int
@@ -31,6 +33,10 @@ const (
 	GetCACert     = "GetCACert"
 	PkiOperation  = "PKIOperation"
 	GetNextCACert = "GetNextCACert"
+)
+
+const (
+	CAIDENTIFIER = "CA-IDENT"
 )
 
 const (

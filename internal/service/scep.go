@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/base64"
-	"fmt"
 	"kscep/internal/biz"
 	"net/url"
 
@@ -36,19 +35,24 @@ func (sc *SCEPService) RegisterServiceRouter(r *gin.RouterGroup) {
 func (s *SCEPService) scep(c *gin.Context) {
 	var req biz.SCEPRequest
 	var resp biz.SCEPResponse = biz.SCEPResponse{Operation: req.Operation}
-	req.Operation = c.Query("operation")
+	req.Operation = c.Query(SCEPOptQuery)
 	if req.Operation == "" {
-		resp.Err = biz.MissingOperationErr
+		resp.Err = biz.ErrMissingOperation
 		ClientError(resp.Err, c)
 		return
 	}
-	msg := c.Query("message")
-	if msg == "" && (req.Operation != "GetCACaps" && req.Operation != "GetCACert") {
-		resp.Err = biz.MissingMessageErr
+	msg := c.Query(SCEPMsgQuery)
+	if msg == "" && req.Operation != biz.GetCACert {
+		resp.Err = biz.ErrMissingMessage
 		ClientError(resp.Err, c)
 		return
 	}
-	if req.Operation == "PKIOperation" {
+	if req.Operation == biz.GetCACaps && msg != biz.CAIDENTIFIER {
+		resp.Err = biz.ErrDepotConfig
+		ClientError(resp.Err, c)
+		return
+	}
+	if req.Operation == biz.PkiOperation {
 		msg2, err := url.PathUnescape(msg)
 		if err != nil {
 			resp.Err = err
@@ -65,16 +69,16 @@ func (s *SCEPService) scep(c *gin.Context) {
 		req.Message = []byte(msg)
 	}
 	switch req.Operation {
-	case "GetCACaps":
+	case biz.GetCACaps:
 		resp.Data, resp.Err = s.uc.GetCACaps(c)
-	case "GetCACert":
+	case biz.GetCACert:
 		resp.Data, resp.CACertNum, resp.Err = s.uc.GetCACert(c, string(req.Message))
-	case "PKIOperation":
+	case biz.PkiOperation:
 		resp.Data, resp.Err = s.uc.PKIOperation(c, req.Message)
-	case "GetNextCACert":
+	case biz.GetNextCACert:
 		resp.Data, resp.Err = s.uc.GetNextCACert(c)
 	default:
-		resp.Err = biz.UnsupportedOperationErr
+		resp.Err = biz.ErrUnsupportedOperation
 	}
 	if resp.Err != nil {
 		ClientError(resp.Err, c)
@@ -86,15 +90,15 @@ func (s *SCEPService) scep(c *gin.Context) {
 func (s *SCEPService) sceppost(c *gin.Context) {
 	var req biz.SCEPRequest
 	var resp biz.SCEPResponse = biz.SCEPResponse{Operation: req.Operation}
-	req.Operation = c.Query("operation")
+	req.Operation = c.Query(SCEPOptQuery)
 	if req.Operation == "" {
-		resp.Err = biz.MissingOperationErr
+		resp.Err = biz.ErrMissingOperation
 		ClientError(resp.Err, c)
-		s.log.Error("MissingOperationErr")
+		s.log.Error("Missing Operation Err")
 		return
 	}
 
-	if req.Operation == "PKIOperation" {
+	if req.Operation == biz.PkiOperation {
 		req.Message = make([]byte, c.Request.ContentLength)
 		_, err := c.Request.Body.Read(req.Message)
 		if err != nil && err.Error() != "EOF" {
@@ -104,20 +108,19 @@ func (s *SCEPService) sceppost(c *gin.Context) {
 			return
 		}
 	} else {
-		s.log.Error("UnsupportedOperationErr")
-		ClientError(biz.UnsupportedOperationErr, c)
+		s.log.Error("Unsupported Operation Err")
+		ClientError(biz.ErrUnsupportedOperation, c)
 		return
 	}
 
 	switch req.Operation {
-	case "PKIOperation":
+	case biz.PkiOperation:
 		resp.Data, resp.Err = s.uc.PKIOperation(c, req.Message)
 	default:
-		resp.Err = biz.UnsupportedOperationErr
-		s.log.Error("UnsupportedOperationErr")
+		resp.Err = biz.ErrUnsupportedOperation
+		s.log.Error("Unsupported Operation Err")
 		ClientError(resp.Err, c)
 		return
 	}
-	fmt.Println("resp:", len(resp.Data))
 	Ok(resp, c)
 }

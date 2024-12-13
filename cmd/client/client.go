@@ -30,7 +30,7 @@ type runCfg struct {
 	locality string
 	dnsName  string
 
-	challenge       string
+	// challenge       string
 	serverURL       string
 	caCertsSelector scep.CertsSelector
 	caCertMsg       string
@@ -53,15 +53,15 @@ func run(cfg runCfg) error {
 	}
 
 	opts := &utils.CsrOptions{
-		Country:   strings.ToUpper(cfg.country),
-		Province:  cfg.province,
-		Org:       cfg.org,
-		OU:        cfg.ou,
-		Cn:        cfg.cn,
-		Locality:  cfg.locality,
-		DnsName:   cfg.dnsName,
-		Key:       key,
-		Challenge: cfg.challenge,
+		Country:  strings.ToUpper(cfg.country),
+		Province: cfg.province,
+		Org:      cfg.org,
+		OU:       cfg.ou,
+		Cn:       cfg.cn,
+		Locality: cfg.locality,
+		DnsName:  cfg.dnsName,
+		Key:      key,
+		// Challenge: cfg.challenge,
 	}
 
 	csr, err := utils.LoadOrMakeCSR(cfg.csrPath, opts)
@@ -117,7 +117,7 @@ func run(cfg runCfg) error {
 
 	var msgType scep.MessageType
 	{
-		// TODO validate CA and set UpdateReq if needed
+		// TODO: validate CA and set UpdateReq if needed
 		if cert != nil {
 			msgType = scep.RenewalReq
 		} else {
@@ -131,13 +131,14 @@ func run(cfg runCfg) error {
 		SignerKey:   key,
 		SignerCert:  signerCert,
 	}
+	// TODO: 这里是不是应该先查询证书是否存在，如果存在则不再做签发请求
 
-	if cfg.challenge != "" && msgType == scep.PKCSReq {
-		tmpl.CSRReqMessage = &scep.CSRReqMessage{
-			ChallengePassword: cfg.challenge,
-		}
-	}
-	msg, err := scep.NewCSRRequest(csr, tmpl, scep.WithCertsSelector(cfg.caCertsSelector))
+	// if cfg.challenge != "" && msgType == scep.PKCSReq {
+	// 	tmpl.CSRReqMessage = &scep.CSRReqMessage{
+	// 		ChallengePassword: cfg.challenge,
+	// 	}
+	// }
+	msg, err := scep.NewCSRRequest(csr, tmpl, scep.WithCertsSelector(cfg.caCertsSelector), scep.WithLogger(utils.LoggerSCEPWapperWithZap(logger)))
 	if err != nil {
 		logger.Error("creating csr pkiMessage", zap.Error(err))
 		return errors.Wrap(err, "creating csr pkiMessage")

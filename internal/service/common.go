@@ -7,6 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	SCEPMsgQuery = "message"
+	SCEPOptQuery = "operation"
+)
+
 func Result(statusCode int, resp biz.SCEPResponse, c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", utils.ContentHeader(resp.Operation, resp.CACertNum))
 	c.Writer.WriteHeader(statusCode)
