@@ -15,6 +15,7 @@ var version = "0.0.1"
 func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(ReqCmd)
+	rootCmd.AddCommand(GetCmd)
 }
 
 // versionCmd represents the version command
@@ -24,6 +25,54 @@ var versionCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		os.Stdout.WriteString(fmt.Sprintf("version: %s\n", version))
+	},
+}
+
+var GetCmd = &cobra.Command{
+	Use:   "getCert",
+	Short: "getCert subcommand is a client for SCEP protocol",
+	Long:  "getCert subcommand is a client for SCEP protocol",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		InitializeLogger(logFmt)
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		if issuer == "" || serial == "" {
+			logger.Error("issuer and serial are required")
+			os.Exit(1)
+		}
+		dir := filepath.Dir(PKeyPath)
+		csrPath := dir + "/csr.pem"
+		selfSignPath := dir + "/self.pem"
+		if CertPath == "" {
+			CertPath = dir + "/client.pem"
+		}
+		cfg := runCfg{
+			dir:          dir,
+			selfSignPath: selfSignPath,
+			certPath:     CertPath,
+			csrPath:      csrPath,
+			keyPath:      PKeyPath,
+			keyBits:      KeySize,
+
+			serverURL: ServerURL,
+
+			country:  Country,
+			province: Province,
+			org:      Org,
+			ou:       OU,
+			cn:       CName,
+			locality: Loc,
+			dnsName:  DNSName,
+
+			caCertMsg: CACertMessage,
+
+			logfmt: logFmt,
+			debug:  DebugLogging,
+		}
+		if err := get(issuer, serial, cfg); err != nil {
+			logger.Error("error running client", zap.Error(err))
+			os.Exit(1)
+		}
 	},
 }
 

@@ -19,6 +19,8 @@ var (
 	DebugLogging            bool   //启用调试日志
 	logFmt                  string //使用 JSON 输出日志
 	errTrace                bool   //打印错误堆栈
+	issuer                  string //颁发者
+	serial                  string //序列号
 )
 
 func init() {
@@ -39,5 +41,10 @@ func init() {
 	ReqCmd.Flags().BoolVarP(&DebugLogging, "debug-logging", "g", false, "Enable debug logging")
 	ReqCmd.Flags().StringVarP(&logFmt, "log-json", "j", "console", "Use JSON output for logs")
 	ReqCmd.Flags().BoolVarP(&errTrace, "error-trace", "r", false, "Print error stack traces")
+
+	GetCmd.Flags().StringVarP(&issuer, "issuer", "", "", "Issuer")
+	GetCmd.Flags().StringVarP(&serial, "serial", "", "", "Serial")
+	GetCmd.Flags().StringVarP(&ServerURL, "server-url", "", "http://localhost:8000/api/v1/scep", "SCEP server URL")
+	GetCmd.Flags().StringVarP(&PKeyPath, "private-key", "", ".", "Private key path")
 	// clientCmd.Flags().StringVarP(&ChallengePassword, "challenge-password", "c", "", "Challenge password")
 }

@@ -27,6 +27,7 @@ type CSRSignerRepo interface {
 	WithAllowRenewalDays(r int)
 	WithValidityDays(v int)
 	WithSeverAttrs()
+	GetCertBySerial(serial string) (*x509.Certificate, error)
 }
 
 type CSRSignerUsecase struct {
@@ -45,4 +46,8 @@ func NewCSRSignerUsecase(conf *conf.Data, logger log.Logger, repo CSRSignerRepo)
 
 func (uc *CSRSignerUsecase) SignCSR(ctx context.Context, csr *scep.CSRReqMessage) (*x509.Certificate, error) {
 	return uc.repo.SignCSRContext(ctx, csr)
+}
+
+func (uc *CSRSignerUsecase) GetCertBySerial(serial string) (*x509.Certificate, error) {
+	return uc.repo.GetCertBySerial(serial)
 }

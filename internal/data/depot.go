@@ -11,4 +11,5 @@ type Depot interface {
 	Put(name string, crt *x509.Certificate) error
 	Serial() (*big.Int, error)
 	HasCN(cn string, allowTime int, cert *x509.Certificate, revokeOldCertificate bool) (bool, error)
+	Get(issuer, serial string) (*x509.Certificate, error)
 }

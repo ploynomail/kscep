@@ -125,6 +125,10 @@ func (s *SignerRepo) SignCSRContext(ctx context.Context, m *scep.CSRReqMessage) 
 	return crt, nil
 }
 
+func (s *SignerRepo) GetCertBySerial(serial string) (*x509.Certificate, error) {
+	return s.data.Depot.Get("MICROMDM SCEP CA", serial)
+}
+
 func certName(crt *x509.Certificate) string {
 	if crt.Subject.CommonName != "" {
 		return crt.Subject.CommonName

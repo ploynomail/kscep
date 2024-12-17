@@ -312,3 +312,70 @@ func TestFileDepot_HasCN(t *testing.T) {
 	}
 	os.Remove(dir + "/test2.1.pem")
 }
+func TestFileDepot_Get(t *testing.T) {
+	depot, err := NewFileDepot(dir)
+	if err != nil {
+		t.Fatalf("NewFileDepot() error = %v", err)
+	}
+
+	// Generate a test certificate
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			CommonName: "test",
+		},
+		Issuer: pkix.Name{
+			CommonName: "issuer",
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:  x509.KeyUsageCertSign,
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &priv.PublicKey, priv)
+	if err != nil {
+		t.Fatalf("Failed to create certificate: %v", err)
+	}
+	cert, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		t.Fatalf("Failed to parse certificate: %v", err)
+	}
+
+	// Write the certificate to the depot
+	err = depot.Put("test", cert)
+	if err != nil {
+		t.Fatalf("Put() error = %v", err)
+	}
+	defer os.Remove(dir + "/test.1.pem")
+	// defer os.Remove(dir + "/index.txt")
+	// Test Get method
+	retrievedCert, err := depot.Get("test", "01")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if retrievedCert.Subject.CommonName != "test" {
+		t.Fatalf("Get() returned certificate with CommonName = %v, want test", retrievedCert.Subject.CommonName)
+	}
+
+	// Test Get method with non-existent certificate
+	_, err = depot.Get("nonexistent", "999")
+	if err == nil || err.Error() != "certificate not found" {
+		t.Fatalf("Get() error = %v, want certificate not found", err)
+	}
+
+	// Test Get method with revoked certificate
+	// Revoke the certificate
+	err = depot.writeDB("test", cert.SerialNumber, "test.1.pem", cert)
+	if err != nil {
+		t.Fatalf("writeDB() error = %v", err)
+	}
+	_, err = depot.Get("issuer", "1")
+	if err == nil || err.Error() != "certificate not found" {
+		t.Fatalf("Get() error = %v, want certificate not found", err)
+	}
+
+	os.Remove(dir + "/test.1.pem")
+}

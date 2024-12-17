@@ -190,3 +190,115 @@ func run(cfg runCfg) error {
 
 	return nil
 }
+
+func get(issuer, serial string, cfg runCfg) error {
+	ctx := context.Background()
+	client, err := client.NewClient(cfg.serverURL, logger)
+	if err != nil {
+		logger.Error("creating client", zap.Error(err))
+		return err
+	}
+	key, err := utils.LoadOrMakeKey(cfg.keyPath, cfg.keyBits)
+	if err != nil {
+		logger.Error("loading or making key", zap.Error(err))
+		return err
+	}
+	resp, certNum, err := client.GetCACert(ctx, cfg.caCertMsg)
+	if err != nil {
+		logger.Error("getting ca cert", zap.Error(err))
+		return err
+	}
+	opts := &utils.CsrOptions{
+		Country:  strings.ToUpper(cfg.country),
+		Province: cfg.province,
+		Org:      cfg.org,
+		OU:       cfg.ou,
+		Cn:       cfg.cn,
+		Locality: cfg.locality,
+		DnsName:  cfg.dnsName,
+		Key:      key,
+		// Challenge: cfg.challenge,
+	}
+	csr, err := utils.LoadOrMakeCSR(cfg.csrPath, opts)
+	if err != nil {
+		logger.Error("loading or making csr", zap.Error(err))
+		return err
+	}
+	var self *x509.Certificate
+	s, err := utils.LoadOrSign(cfg.selfSignPath, key, csr)
+	if err != nil {
+		logger.Error("loading or signing self signed cert", zap.Error(err))
+		return err
+	}
+	self = s
+	var caCerts []*x509.Certificate
+	{
+		if certNum > 1 {
+			caCerts, err = scep.CACerts(resp)
+			if err != nil {
+				logger.Error("parsing ca certs", zap.Error(err))
+				return err
+			}
+		} else {
+			caCerts, err = x509.ParseCertificates(resp)
+			if err != nil {
+				logger.Error("parsing ca cert", zap.Error(err))
+				return err
+			}
+		}
+	}
+	var signerCert *x509.Certificate
+	{
+		signerCert = self
+	}
+
+	msgType := scep.GetCert
+
+	tmpl := &scep.PKIMessage{
+		MessageType: msgType,
+		Recipients:  caCerts,
+		SignerKey:   key,
+		SignerCert:  signerCert,
+	}
+
+	msg, err := scep.NewGetCertRequest(csr, issuer, serial, tmpl, scep.WithLogger(utils.LoggerSCEPWapperWithZap(logger)))
+	if err != nil {
+		logger.Error("creating csr pkiMessage", zap.Error(err))
+		return errors.Wrap(err, "creating csr pkiMessage")
+	}
+	var respMsg *scep.PKIMessage
+
+	respBytes, err := client.PKIOperation(ctx, msg.Raw)
+	if err != nil {
+		logger.Error("PKIOperation", zap.Error(err))
+		return errors.Wrapf(err, "PKIOperation for %s", msgType)
+	}
+
+	respMsg, err = scep.ParsePKIMessage(respBytes, scep.WithCACerts(caCerts))
+	if err != nil {
+		logger.Error("parsing pkiMessage response", zap.Error(err))
+		return errors.Wrapf(err, "parsing pkiMessage response %s", msgType)
+	}
+
+	if respMsg.PKIStatus == scep.FAILURE {
+		return errors.Errorf("%s request failed, failInfo: %s", msgType, respMsg.FailInfo)
+
+	}
+	if err := respMsg.DecryptPKIEnvelope(signerCert, key); err != nil {
+		return errors.Wrapf(err, "decrypt pkiEnvelope, msgType: %s, status %s", msgType, respMsg.PKIStatus)
+	}
+
+	respCert := respMsg.CertRepMessage.Certificate
+	if err := os.WriteFile(cfg.certPath, utils.PemCert(respCert.Raw), 0666); err != nil {
+		return err
+	}
+
+	// remove self signer if used
+	if self != nil {
+		if err := os.Remove(cfg.selfSignPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

@@ -80,16 +80,32 @@ func (svc *SCEPUsecase) PKIOperation(ctx context.Context, data []byte) ([]byte, 
 		svc.log.Errorf("failed to decrypt PKI envelope: %v", err)
 		return nil, err
 	}
-
-	crt, err := svc.signer.SignCSR(ctx, msg.CSRReqMessage)
-	if err == nil && crt == nil {
-		svc.log.Errorf("failed to sign CSR: no signed certificate")
-		err = errors.New("no signed certificate")
-	}
-	if err != nil {
-		svc.log.Errorf("failed to sign CSR: %v", err)
-		certRep, err := msg.Fail(caCrt, caKey, scep.BadRequest)
-		return certRep.Raw, err
+	var crt *x509.Certificate
+	if msg.MessageType == scep.PKCSReq || msg.MessageType == scep.RenewalReq || msg.MessageType == scep.UpdateReq {
+		crt, err = svc.signer.SignCSR(ctx, msg.CSRReqMessage)
+		if err == nil && crt == nil {
+			svc.log.Errorf("failed to sign CSR: no signed certificate")
+			err = errors.New("no signed certificate")
+		}
+		if err != nil {
+			svc.log.Errorf("failed to sign CSR: %v", err)
+			certRep, err := msg.Fail(caCrt, caKey, scep.BadRequest)
+			return certRep.Raw, err
+		}
+	} else if msg.MessageType == scep.GetCert {
+		issuerAndserial := strings.Split(string(msg.RawDecrypted), "\n")
+		if len(issuerAndserial) != 2 {
+			svc.log.Errorf("failed to parse issuer and serial: %v", issuerAndserial)
+			certRep, err := msg.Fail(caCrt, caKey, scep.BadRequest)
+			return certRep.Raw, err
+		}
+		serialUpper := strings.ToUpper(issuerAndserial[1])
+		crt, err = svc.signer.GetCertBySerial(serialUpper)
+		if err != nil {
+			svc.log.Errorf("failed to get certificate by serial: %v", err)
+			certRep, err := msg.Fail(caCrt, caKey, scep.BadRequest)
+			return certRep.Raw, err
+		}
 	}
 	certRep, err := msg.Success(caCrt, caKey, crt)
 	return certRep.Raw, err

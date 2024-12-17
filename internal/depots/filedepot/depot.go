@@ -248,11 +248,11 @@ func (d *fileDepot) HasCN(_ string, allowTime int, cert *x509.Certificate, revok
 			} else if strings.HasPrefix(line, "V\t") {
 				issueDate, err := strconv.ParseInt(strings.Replace(strings.Split(line, "\t")[1], "Z", "", 1), 10, 64)
 				if err != nil {
-					return false, errors.New("Could not get expiry date from ca db")
+					return false, errors.New("could not get expiry date from ca db")
 				}
 				minimalRenewDate, err := strconv.ParseInt(strings.Replace(makeOpenSSLTime(time.Now().AddDate(0, 0, allowTime).UTC()), "Z", "", 1), 10, 64)
 				if err != nil {
-					return false, errors.New("Could not calculate expiry date")
+					return false, errors.New("could not calculate expiry date")
 				}
 				entries := strings.Split(line, "\t")
 				serial := strings.ToUpper(entries[3])
@@ -292,6 +292,42 @@ func (d *fileDepot) HasCN(_ string, allowTime int, cert *x509.Certificate, revok
 		}
 	}
 	return true, nil
+}
+
+func (d *fileDepot) Get(issuer, serial string) (*x509.Certificate, error) {
+	if err := os.MkdirAll(d.dirPath, 0755); err != nil {
+		return nil, err
+	}
+
+	name := d.path("index.txt")
+	file, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Removing revoked certificate from candidates, if any
+		if strings.HasPrefix(line, "R\t") {
+			continue
+			// Test & add certificate candidates, if any
+		} else if strings.HasPrefix(line, "V\t") {
+			entries := strings.Split(line, "\t")
+			if entries[3] == serial && entries[5] == issuer {
+				certFile := d.path(entries[4])
+				certPEM, err := os.ReadFile(certFile)
+				if err != nil {
+					if os.IsNotExist(err) {
+						continue
+					}
+					return nil, err
+				}
+				return loadCert(certPEM)
+			}
+		}
+	}
+	return nil, errors.New("certificate not found")
 }
 
 // writeDB writes a certificate entry to the database file.
@@ -355,7 +391,7 @@ func (d *fileDepot) writeDB(cn string, serial *big.Int, filename string, cert *x
 	validDate := makeOpenSSLTime(cert.NotAfter)
 
 	dn := makeDn(cert)
-
+	issuer := cert.Issuer.CommonName
 	// Valid
 	dbEntry.WriteString("V\t")
 	// Valid till
@@ -366,6 +402,7 @@ func (d *fileDepot) writeDB(cn string, serial *big.Int, filename string, cert *x
 	dbEntry.WriteString(serialHex + "\t")
 	// Certificate file name
 	dbEntry.WriteString(filename + "\t")
+	dbEntry.WriteString(issuer + "\t")
 	// Certificate DN
 	dbEntry.WriteString(dn)
 	dbEntry.WriteString("\n")
