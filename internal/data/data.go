@@ -18,12 +18,12 @@ var ProviderSet = wire.NewSet(
 
 // Data .
 type Data struct {
-	Depot Depot
+	Depot biz.DepotRepo
 }
 
 // NewData .
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
-	var depot Depot
+	var depot biz.DepotRepo
 	var err error
 	switch c.DepotType {
 	case "file":

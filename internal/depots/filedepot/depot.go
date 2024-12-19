@@ -98,7 +98,7 @@ func (d *fileDepot) Put(cn string, crt *x509.Certificate) error {
 		return err
 	}
 	if err := d.writeDB(cn, serial, filename, crt); err != nil {
-		// TODO : remove certificate in case of writeDB problems
+		os.Remove(filepath)
 		return err
 	}
 
@@ -479,7 +479,7 @@ const (
 )
 
 // load an encrypted private key from disk
-func loadKey(data []byte, password []byte) (*rsa.PrivateKey, error) {
+func loadKey(data []byte, password []byte) (any, error) {
 	pemBlock, _ := pem.Decode(data)
 	if pemBlock == nil {
 		return nil, errors.New("PEM decode failed")

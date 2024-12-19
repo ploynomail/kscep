@@ -118,6 +118,10 @@ func LoadOrMakeKey(path string, rsaBits int) (*rsa.PrivateKey, error) {
 	return priv, nil
 }
 
+func LoadKey(path string) (*rsa.PrivateKey, error) {
+	return loadKeyFromFile(path)
+}
+
 // load a PEM private key from disk
 func loadKeyFromFile(path string) (*rsa.PrivateKey, error) {
 	data, err := os.ReadFile(path)

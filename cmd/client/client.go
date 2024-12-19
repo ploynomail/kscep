@@ -198,7 +198,7 @@ func get(issuer, serial string, cfg runCfg) error {
 		logger.Error("creating client", zap.Error(err))
 		return err
 	}
-	key, err := utils.LoadOrMakeKey(cfg.keyPath, cfg.keyBits)
+	key, err := utils.LoadKey(cfg.keyPath)
 	if err != nil {
 		logger.Error("loading or making key", zap.Error(err))
 		return err
