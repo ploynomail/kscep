@@ -24,8 +24,6 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*kratos.App, func(), error) {
-	helloWorldUsecase := biz.NewHelloWorldUsecase(logger)
-	helloWorldService := service.NewHelloWorldService(helloWorldUsecase, logger)
 	dataData, cleanup, err := data.NewData(confData, logger)
 	if err != nil {
 		return nil, nil, err
@@ -36,7 +34,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger) (*
 	csrSignerUsecase := biz.NewCSRSignerUsecase(confData, logger, csrSignerRepo)
 	scepUsecase := biz.NewSCEPUsecase(scepcaUsecase, csrSignerUsecase, logger)
 	scepService := service.NewSCEPService(scepUsecase, logger)
-	httpServer := server.NewGinhttpServer(confServer, logger, helloWorldService, scepService)
+	httpServer := server.NewGinhttpServer(confServer, logger, scepService)
 	app := newApp(logger, httpServer)
 	return app, func() {
 		cleanup()

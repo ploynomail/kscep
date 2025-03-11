@@ -13,7 +13,6 @@ import (
 // NewGinhttpServer new an Gin HTTP server.
 func NewGinhttpServer(c *conf.Server,
 	logger log.Logger,
-	hwService *service.HelloWorldService,
 	secpSerivce *service.SCEPService,
 ) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
@@ -22,7 +21,6 @@ func NewGinhttpServer(c *conf.Server,
 	// 路由版本
 	apiv1 := router.Group("/api/v1")
 	{
-		hwService.RegisterServiceRouter(apiv1)
 		secpSerivce.RegisterServiceRouter(apiv1)
 	}
 	httpSrv := http.NewServer(
